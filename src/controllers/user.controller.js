@@ -2,22 +2,18 @@ import { UploadStream } from 'cloudinary';
 import User from '../models/user.model.js';
 import uploadOnCloudinary from '../utility/cloudinary.js';
 
-const generateAccessAndRefreshTokens = async (userID) => {
-  try {
-    const user = await User.findById(userID);
-
-    const accessToken = generateAccessToken();
-    return accessToken;
-  } catch (error) {
-    console.error('Error ', error);
-    res.status(400).json('something went wrong');
-  }
+const generateAccessTokens = async (userID) => {
+  return jwt.sign(
+    { _id: userID, email: this.email },
+    process.env.ACCESS_TOKEN_SECRET,
+    { expiresIn: process.env.ACCESS_TOKEN_EXPIRY }
+  );
 };
 
 const registerUser = async (req, res) => {
   const { fullName, email, password } = req.body;
 
-  if ([fullName, email, password].some((field) => field.trim === '')) {
+  if (!fullName || !email || !password) {
     return res.status(400).json('All fields are required');
   }
 
@@ -74,7 +70,7 @@ const login = async (req, res) => {
     return res.status(400).json('Incorrect password');
   }
 
-  const { accessToken } = await generateAccessAndRefreshTokens(user._id);
+  const accessToken = await generateAccessTokens(user._id);
 
   const loggedInUser = await User.findById(user._id).select(' -password');
 
@@ -90,18 +86,6 @@ const login = async (req, res) => {
 
 const logOut = async (req, res) => {
   try {
-    const user = await User.findByIdAndUpdate(
-      req.user._id,
-      {
-        accessToken: null,
-      },
-      { new: true }
-    );
-
-    if (!user) {
-      return res.status(400).json('User not found');
-    }
-
     res.clearCookie('accessToken', { secure: true, httpOnly: true });
     res.status(200).json('User logout successfully');
   } catch (error) {
@@ -110,4 +94,4 @@ const logOut = async (req, res) => {
   }
 };
 
-export { registerUser, generateAccessAndRefreshTokens, login, logOut };
+export { registerUser, generateAccessTokens, login, logOut };
