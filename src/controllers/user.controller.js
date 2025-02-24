@@ -7,12 +7,7 @@ const generateAccessAndRefreshTokens = async (userID) => {
     const user = await User.findById(userID);
 
     const accessToken = generateAccessToken();
-    const refreshToken = generateRefreshToken();
-
-    user.refreshToken = refreshToken;
-
-    await user.save({ validateBeforeSave: true });
-    return accessToken, refreshToken;
+    return accessToken;
   } catch (error) {
     console.error('Error ', error);
     res.status(400).json('something went wrong');
@@ -79,49 +74,40 @@ const login = async (req, res) => {
     return res.status(400).json('Incorrect password');
   }
 
-  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
-    user._id
-  );
+  const { accessToken } = await generateAccessAndRefreshTokens(user._id);
 
-  const loggedInUser = await User.findById(user._id).select(
-    '-refreshToken -password'
-  );
+  const loggedInUser = await User.findById(user._id).select(' -password');
 
   const options = { httpOnly: true, secure: only };
 
-  res
-    .status(200)
-    .cookie('accessToken', accessToken, options)
-    .cookie('refreshToken', refreshToken)
-    .json({
-      accessToken,
-      refreshToken,
-      user: loggedInUser,
-      message: 'User logged in Successfully',
-    });
+  res.status(200).cookie('accessToken', accessToken, options).json({
+    accessToken,
+    refreshToken,
+    user: loggedInUser,
+    message: 'User logged in Successfully',
+  });
 };
 
 const logOut = async (req, res) => {
-  const user = await User.findByIdAndUpdate(
-    req.user._id,
-    {
-      $set: { refreshToken: undefined },
-    },
-    { new: true }
-  );
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      {
+        accessToken: null,
+      },
+      { new: true }
+    );
 
-  const options = { secure: true, httpOnly: true };
+    if (!user) {
+      return res.status(400).json('User not found');
+    }
 
-  res
-    .status(200)
-    .clearCookie(accessToken, option)
-    .clearCookie(refreshToken, options)
-    .json({
-      accessToken,
-      refreshToken,
-      user: user,
-      message: 'user logged out successfully',
-    });
+    res.clearCookie('accessToken', { secure: true, httpOnly: true });
+    res.status(200).json('User logout successfully');
+  } catch (error) {
+    console.log('Error ', error);
+    res.status(500).json('Error logging out');
+  }
 };
 
 export { registerUser, generateAccessAndRefreshTokens, login, logOut };

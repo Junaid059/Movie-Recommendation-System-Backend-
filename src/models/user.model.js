@@ -82,17 +82,12 @@ UserSchema.methods.isCorrect = async function () {
 
 UserSchema.methods.generateAccessToken = function () {
   jwt.sign(
-    { id: this._id, firstname: this.firstName, email: this.email },
+    { _id: this._id, firstname: this.firstName, email: this.email },
     process.env.ACCESS_TOKEN_SECRET,
     { expiresIn: process.env.ACCESS_TOKEN_EXPIRY }
   );
 };
 
-UserSchema.methods.generateRefreshToken = function () {
-  jwt.sign({ id: _id }, process.env.REFRESH_TOKEN_SECRET, {
-    expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
-  });
-};
 
 const User = mongoose.model('User', UserSchema);
 
