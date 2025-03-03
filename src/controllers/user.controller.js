@@ -94,4 +94,131 @@ const logOut = async (req, res) => {
   }
 };
 
-export { registerUser, generateAccessTokens, login, logOut };
+const updateUser = async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json('Name, email and password are required');
+    }
+
+    const { userID } = req.params;
+
+    const user = await User.findByIdAndUpdate(
+      userID,
+      {
+        $set: {
+          name,
+          email,
+          password: await bcrypt.hash(password, 10),
+        },
+      },
+      {
+        new: true,
+      }
+    ).select('-password');
+
+    return res.status(200).json({ user, message: 'user updated successfully' });
+  } catch (error) {
+    console.log('Error ', error);
+    res.status(500).json('Error updating user');
+  }
+};
+
+const deleteUser = async (req, res) => {
+  try {
+    const { userID } = req.params;
+
+    if (!userID || !userID.trim()) {
+      return res.status(400).json('User ID is required');
+    }
+
+    const user = await User.findByIdAndDelete(userID);
+    if (!user) {
+      return res.status(404).json('User not found');
+    }
+
+    return res.status(200).json({ user, message: 'user deleted successfully' });
+  } catch (error) {
+    console.log('Error ', error);
+    res.status(500).json('Error deleting user');
+  }
+};
+
+const changePass = async (req, res) => {
+  try {
+    const { oldPass, newPass } = req.body;
+    if (!oldPass || !newPass) {
+      return res.status(400).json('Old password and new password are required');
+    }
+
+    const { userID } = req.params;
+    if (!userID || !userID.trim()) {
+      return res.status(400).json('User ID is required');
+    }
+
+    const user = await User.findById(userID);
+
+    if (!user) {
+      return res.status(404).json('User not found');
+    }
+
+    const changePass = await user.isCorrect(oldPass);
+    if (!changePass) {
+      return res.status(400).json('Old password is incorrect');
+    }
+
+    user.password = newPass;
+    await user.save();
+
+    return res
+      .status(200)
+      .json({ user, message: 'password changed successfully' });
+  } catch (error) {
+    console.log('Error ', error);
+    res.status(500).json('Error changing password');
+  }
+};
+
+const updateProfilePic = async (req, res) => {
+  try {
+    const ProfilePic = req.file.path;
+
+    if (!ProfilePic) {
+      return res.status(400).json('Profile picture is required');
+    }
+
+    const Pic = await uploadOnCloudinary(ProfilePic);
+
+    if (!Pic.url) {
+      return res.status(500).json('Error uploading profile picture');
+    }
+
+    const UpdatedPic = await User.findByIdAndUpdate(
+      req.user._id,
+      {
+        $set: { profilepic: Pic.url },
+      },
+      {
+        new: true,
+      }
+    );
+
+    return res
+      .status(200)
+      .json({ UpdatedPic, message: 'Profile Pic updated successfully' });
+  } catch (error) {
+    console.log('Error ', error);
+    res.status(500).json('Error updating profile picture');
+  }
+};
+export {
+  registerUser,
+  generateAccessTokens,
+  login,
+  logOut,
+  updateUser,
+  deleteUser,
+  changePass,
+  updateProfilePic,
+};

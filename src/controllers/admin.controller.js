@@ -99,4 +99,106 @@ const logoutAdmin = async (req, res) => {
   }
 };
 
-export { registerAdmin, loginAdmin, generateAccessToken, logoutAdmin };
+const UpdateAdmin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Please fill in all fields' });
+    }
+
+    const { userID } = useParams;
+
+    const user = await User.findByIdAndUpdate(
+      userID,
+      {
+        $set: {
+          email: email,
+          password: password,
+        },
+      },
+      {
+        new: true,
+      }
+    ).select('-password');
+
+    return res
+      .status(200)
+      .json({ user, message: 'Aaccount Details Updated successfully' });
+  } catch (error) {
+    console.log('Error', error);
+    return res.status(400).json('error updating admin details');
+  }
+};
+
+const UpdateAdminPass = async (req, res) => {
+  try {
+    const { oldPass, NewPass } = req.body;
+
+    if (!oldPass || !NewPass) {
+      return res.status(400).json({ message: 'Please fill in all fields' });
+    }
+
+    const { userID } = req.params;
+    const user = await User.findById(userID);
+
+    const checkPass = await user.isCorrect(oldPass);
+
+    if (!checkPass) {
+      return res.status(400).json({ message: 'Old password is incorrect' });
+    }
+
+    user.password = NewPass;
+
+    await user.save();
+
+    return res.status(200).json({ NewPass, message: 'Password updated' });
+  } catch (error) {
+    console.log('Error ', error);
+    return res.status(500).json({ message: 'Error updating password' });
+  }
+};
+
+const getSingleUser = async (req, res) => {
+  try {
+    const { userID } = req.params;
+
+    if (!userID || userID.trim() === '') {
+      return res
+        .status(400)
+        .json({ message: 'Please provide a valid user ID' });
+    }
+
+    return res
+      .status(200)
+      .json({ userID, message: 'user fetched successfully' });
+  } catch (error) {
+    console.log('Error', error);
+    return res.status(500).json({ message: 'Error fetching user' });
+  }
+};
+
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find();
+
+    if (!users || users.trim() === '') {
+      return res.status(400).json({ message: 'No users found' });
+    }
+
+    return res.status(200).json({ users, message: 'all users fetched' });
+  } catch (error) {
+    console.log('Error', error);
+    return res.status(500).json({ message: 'Error fetching users' });
+  }
+};
+export {
+  registerAdmin,
+  loginAdmin,
+  generateAccessToken,
+  logoutAdmin,
+  UpdateAdmin,
+  UpdateAdminPass,
+  getSingleUser,
+  getAllUsers,
+};
