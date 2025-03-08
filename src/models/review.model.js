@@ -5,11 +5,13 @@ const ReviewSchema = mongoose.Schema(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
+      required: true, // Making user field required
     },
 
     movie: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Movie',
+      required: true, // Making movie field required
     },
 
     rating: {
@@ -17,11 +19,12 @@ const ReviewSchema = mongoose.Schema(
       required: true,
       min: 1,
       max: 5,
-      default: 0,
     },
 
     comment: {
       type: String,
+      required: true,
+      minlength: 5,
     },
   },
   { timestamps: true }

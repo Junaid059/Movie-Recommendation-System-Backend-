@@ -1,4 +1,3 @@
-import { UploadStream } from 'cloudinary';
 import User from '../models/user.model.js';
 import uploadOnCloudinary from '../utility/cloudinary.js';
 
