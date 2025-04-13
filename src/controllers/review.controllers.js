@@ -42,3 +42,40 @@ const AddReviews = async (req, res) => {
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+
+const updateReview = async () => {
+  try {
+    const { rating, comment } = req.body;
+    const reviewId = req.params.id;
+    const userId = req.user._id;
+
+    if (!rating || !comment) {
+      return res.status(400).json({ message: 'Please fill in all fields' });
+    }
+
+    const review = await Review.findByIdAndUpdate(
+      reviewId,
+      {
+        rating: rating,
+        comment: comment,
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    if (!review) {
+      return res.status(404).json({ message: 'Review not found' });
+    }
+
+    return res
+      .status(200)
+      .json(review, userId, { message: 'Review updated successfully' });
+  } catch (error) {
+    console.log('Error ', error);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+export { AddReviews, updateReview };

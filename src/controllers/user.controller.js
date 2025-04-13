@@ -77,7 +77,6 @@ const login = async (req, res) => {
 
   res.status(200).cookie('accessToken', accessToken, options).json({
     accessToken,
-    refreshToken,
     user: loggedInUser,
     message: 'User logged in Successfully',
   });
